@@ -1,0 +1,36 @@
+<h1>Admin Dashboard</h1>
+
+<p>
+  Total Users: <%= @users_count %><br>
+  Total Jobs: <%= @jobs_count %>
+</p>
+
+<h2>Recent Users</h2>
+<ul>
+  <% @recent_users.each do |u| %>
+    <li><%= u.name %> - <%= u.email %> - <%= u.department %></li>
+  <% end %>
+</ul>
+
+<h2>Recent Jobs</h2>
+<table>
+  <tr>
+    <th>User</th>
+    <th>Status</th>
+    <th>Message</th>
+    <th>Time</th>
+  </tr>
+  <% @recent_jobs.each do |j| %>
+    <tr>
+      <td><%= j.user&.name || "-" %></td>
+      <td><%= j.status %></td>
+      <td><%= j.message %></td>
+      <td><%= j.created_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
+    </tr>
+  <% end %>
+</table>
+
+<p>
+  <%= button_to "Log out", logout_path, method: :delete %>
+</p>
+

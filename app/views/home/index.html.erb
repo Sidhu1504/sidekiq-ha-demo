@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Sidekiq Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 100vh;
+        margin: 0;
+        padding: 40px;
+      }
+
+      .container {
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .card {
+        background: white;
+        width: 380px;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+      }
+
+      .title {
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+
+      .field {
+        margin-bottom: 12px;
+      }
+
+      label {
+        font-size: 13px;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      input {
+        width: 100%;
+        padding: 9px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      .btn {
+        margin-top: 10px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        background: #667eea;
+        color: white;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn:hover {
+        background: #5563d6;
+      }
+
+      .success {
+        margin-top: 10px;
+        color: green;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 13px;
+      }
+
+      th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+      }
+
+      th {
+        background: #667eea;
+        color: white;
+      }
+
+      .footer {
+        position: fixed;
+        bottom: 12px;
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        color: #ffffffcc;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .footer span {
+        color: #ffd369;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+<% if user_signed_in? %>
+  <p style="color:white;margin-bottom:10px;">
+    Logged in as <strong><%= current_user.email %></strong> |
+    <%= button_to "Logout", user_logout_path, method: :delete %>
+  </p>
+<% else %>
+  <p style="color:white;margin-bottom:10px;">
+    <a href="/signup" style="color:#ffd369;">Sign up</a> |
+    <a href="/user_login" style="color:#ffd369;">Login</a>
+  </p>
+<% end %>
+
+
+  <body>
+    <div class="container">
+
+      <!-- ✅ USER FORM -->
+      <div class="card">
+        <div class="title">🚀 Create User & Run Job</div>
+
+        <%= form_with model: @user, url: "/trigger", method: :post do |f| %>
+
+          <div class="field">
+            <%= f.label :name %>
+            <%= f.text_field :name, required: true %>
+          </div>
+
+          <div class="field">
+            <%= f.label :age %>
+            <%= f.number_field :age, required: true %>
+          </div>
+
+          <div class="field">
+            <%= f.label :dob %>
+            <%= f.date_field :dob, required: true %>
+          </div>
+
+          <div class="field">
+            <%= f.label :department %>
+            <%= f.text_field :department, required: true %>
+          </div>
+
+          <div class="field">
+            <%= f.label :email %>
+            <%= f.email_field :email, required: true %>
+          </div>
+
+          <%= f.submit "Run Background Job", class: "btn" %>
+        <% end %>
+
+        <% if notice.present? %>
+          <div class="success"><%= notice %></div>
+        <% end %>
+      </div>
+
+      <!-- ✅ SEARCH BOX -->
+      <div class="card">
+        <div class="title">🔍 Search Users</div>
+
+        <%= form_with url: "/search", method: :get do |f| %>
+          <div class="field">
+            <label>Search by Name / Email / Department</label>
+            <%= f.text_field :query, required: true %>
+          </div>
+
+          <%= f.submit "Search", class: "btn" %>
+        <% end %>
+
+        <% if @results.present? %>
+          <table>
+            <tr>
+              <th>Name</th>
+              <th>Age</th>
+              <th>DOB</th>
+              <th>Dept</th>
+              <th>Email</th>
+            </tr>
+
+            <% @results.each do |u| %>
+              <tr>
+                <td><%= u.name %></td>
+                <td><%= u.age %></td>
+                <td><%= u.dob %></td>
+                <td><%= u.department %></td>
+                <td><%= u.email %></td>
+              </tr>
+            <% end %>
+          </table>
+        <% end %>
+      </div>
+
+      <!-- ✅ LIVE JOB STATUS VIEWER -->
+      <div class="card">
+        <div class="title">📊 Recent Jobs</div>
+        <table id="jobs-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Status</th>
+              <th>Message</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @jobs&.each do |j| %>
+              <tr>
+                <td><%= j.user&.name || "-" %></td>
+                <td><%= j.status %></td>
+                <td><%= j.message %></td>
+                <td><%= j.created_at.strftime("%H:%M:%S") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p style="font-size:12px;text-align:center;margin-top:8px;">
+          Auto-refreshes every 5 seconds
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ✅ FOOTER BRANDING -->
+    <div class="footer">
+      Designed & Developed by 
+      <span>Sidhant Bote</span> — An Unstoppable Promobian 🚀
+    </div>
+
+    <!-- ✅ SIMPLE POLLING JS FOR LIVE JOBS -->
+    <script>
+      async function refreshJobs() {
+        try {
+          const response = await fetch("/jobs");
+          const jobs = await response.json();
+
+          const tbody = document.querySelector("#jobs-table tbody");
+          tbody.innerHTML = "";
+
+          jobs.forEach(function(j) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${j.user ? j.user.name : "-"}</td>
+              <td>${j.status || ""}</td>
+              <td>${j.message || ""}</td>
+              <td>${new Date(j.created_at).toLocaleTimeString()}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.log("Failed to refresh jobs", e);
+        }
+      }
+
+      setInterval(refreshJobs, 5000);
+    </script>
+  </body>
+</html>
+

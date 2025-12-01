@@ -1,0 +1,22 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 10 } %>
+  host: 192.168.56.19        # ✅ YOUR REMOTE DB / PgCat IP
+  port: 6432                 # ✅ PgCat / HAProxy port
+  username: demo_app        # ✅ Your DB user
+  password: <%= ENV["DEMO_APP_DATABASE_PASSWORD"] %>
+
+development:
+  <<: *default
+  database: demo_app_development
+
+test:
+  <<: *default
+  database: demo_app_test
+
+production:
+  primary:
+    <<: *default
+    database: demo_app_production
+

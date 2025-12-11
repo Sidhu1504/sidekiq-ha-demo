@@ -1,4 +1,3 @@
-# app/jobs/demo_job.rb
 class DemoJob < ApplicationJob
   queue_as :default
 
@@ -18,7 +17,11 @@ class DemoJob < ApplicationJob
       status: "done"
     )
 
-    UserMailer.job_done_email(user).deliver_now
+    # ✅ SEND EMAIL ONLY IF PRESENT
+    if user.email.present?
+      UserMailer.job_done_email(user).deliver_now
+    end
+
   rescue => e
     JobLog.create!(
       user: user,
